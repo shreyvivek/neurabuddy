@@ -46,16 +46,20 @@ Previous student responses: {previous_responses}
 
 Current teaching stage: {stage}
 
+CRITICAL: After EVERY student answer, you MUST provide a NEW guiding question—unless the topic is truly complete.
+Keep the Q-A-Q-A flow: Question → (student answers) → your feedback/explanation if helpful → NEW Question → repeat.
+Never end with just explanation; always ask the next question to continue the dialogue.
+
 Generate either:
 - A guiding question (if student hasn't fully understood yet)
-- An explanation with a follow-up question (if student is ready for the next step)
-- A summary and next topic (if current topic is complete)
+- Brief feedback or explanation PLUS a follow-up question (if student is ready for the next step)
+- A summary and next topic (if current topic is complete—only then set is_complete: true)
 
 Format your response as JSON:
 {{
     "question": "guiding question or null",
-    "explanation": "explanation if ready, or null",
-    "hint": "hint if student struggling, or null",
+    "explanation": "explanation if ready (use **bold** for key terms), or null",
+    "hint": "hint if student struggling (use markdown), or null",
     "is_complete": false,
     "next_step": "what to explore next",
     "concepts_covered": ["list", "of", "concepts"]
@@ -87,12 +91,21 @@ Format your response as JSON:
         previous_responses = previous_responses or []
         
         # Retrieve relevant context
+        filter_dict = {"difficulty_level": difficulty_level.value} if difficulty_level else None
         retrieved_chunks = self.vector_store.search(
             query=topic,
-            top_k=3,
-            filter_dict={"difficulty_level": difficulty_level.value} if difficulty_level else None
+            top_k=5,
+            filter_dict=filter_dict,
+            min_score=0.3
         )
-        
+        if not retrieved_chunks:
+            retrieved_chunks = self.vector_store.search(
+                query=topic,
+                top_k=5,
+                filter_dict=None,
+                min_score=0.2
+            )
+
         if not retrieved_chunks:
             return {
                 "question": None,
@@ -123,6 +136,14 @@ Format your response as JSON:
             import json
             # Try to extract JSON from response
             response = self._parse_llm_response(response_text)
+
+            # Ensure we always have a question unless complete
+            if not response.get("is_complete") and not response.get("question"):
+                prev = previous_responses[-1] if previous_responses else ""
+                response["question"] = (
+                    f"Based on your answer about {prev[:50]}..., what do you think comes next? "
+                    f"Or what anatomical structure might be involved?"
+                )
             
             return response
         except Exception as e:
@@ -170,9 +191,10 @@ Format your response as JSON:
             except json.JSONDecodeError:
                 pass
         
-        # Fallback: return structured response
+        # Fallback: return structured response, ensure question is never null when not complete
+        first_line = response_text.strip().split("\n")[0] if response_text else None
         return {
-            "question": response_text.split("\n")[0] if response_text else None,
+            "question": first_line or "Can you elaborate on that?",
             "explanation": None,
             "hint": None,
             "is_complete": False,

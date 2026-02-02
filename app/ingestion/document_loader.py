@@ -6,6 +6,7 @@ from typing import List, Dict, Any, Optional
 import logging
 
 import pypdf
+from pptx import Presentation
 from bs4 import BeautifulSoup
 import html2text
 
@@ -57,6 +58,8 @@ class DocumentLoader:
         
         if file_type == "pdf":
             return self._load_pdf(file_path)
+        elif file_type == "pptx":
+            return self._load_pptx(file_path)
         elif file_type == "html":
             return self._load_html(file_path)
         elif file_type == "text":
@@ -95,6 +98,33 @@ class DocumentLoader:
             }
         except Exception as e:
             logger.error(f"Error loading PDF {file_path}: {str(e)}")
+            raise
+
+    def _load_pptx(self, file_path: str) -> Dict[str, Any]:
+        """Load and extract text from PowerPoint (.pptx) file."""
+        try:
+            content_parts = []
+            metadata = {"source": file_path, "type": "pptx", "slides": []}
+            prs = Presentation(file_path)
+            metadata["total_slides"] = len(prs.slides)
+
+            for slide_num, slide in enumerate(prs.slides, start=1):
+                slide_texts = []
+                for shape in slide.shapes:
+                    if hasattr(shape, "text") and shape.text.strip():
+                        slide_texts.append(shape.text.strip())
+                if slide_texts:
+                    slide_content = "\n".join(slide_texts)
+                    content_parts.append(f"Slide {slide_num}:\n{slide_content}")
+                    metadata["slides"].append(slide_num)
+
+            content = "\n\n".join(content_parts)
+            content = self._clean_text(content)
+
+            logger.info(f"Loaded PPTX: {file_path} ({len(prs.slides)} slides)")
+            return {"content": content, "metadata": metadata}
+        except Exception as e:
+            logger.error(f"Error loading PPTX {file_path}: {str(e)}")
             raise
     
     def _load_html(self, file_path: str) -> Dict[str, Any]:

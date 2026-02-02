@@ -1,2 +1,0 @@
-# NeuraBuddy Application Package
-

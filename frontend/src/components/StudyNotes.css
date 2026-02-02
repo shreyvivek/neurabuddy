@@ -1,0 +1,276 @@
+.studynotes-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.studynotes-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: var(--primary-subtle);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+}
+
+.studynotes-header .header-icon {
+  color: var(--warning);
+  width: 40px;
+  height: 40px;
+}
+
+.studynotes-header h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.studynotes-header p {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.studynotes-setup {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.studynotes-setup .setup-fields {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+  align-items: flex-end;
+}
+
+.studynotes-setup .form-group {
+  flex: 1;
+  min-width: 150px;
+}
+
+.studynotes-setup .form-group.wide {
+  flex: 2;
+  min-width: 250px;
+}
+
+.studynotes-setup .form-group.checkbox label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.studynotes-setup .form-group.checkbox input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--warning);
+}
+
+.studynotes-setup .form-group label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.studynotes-setup .form-input, .studynotes-setup .form-select {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 1rem;
+}
+
+.studynotes-setup .generate-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.875rem;
+  background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%);
+  border: none;
+  border-radius: var(--radius);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.studynotes-setup .generate-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.studynotes-setup .generate-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.studynotes-container .error-msg {
+  padding: 1rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid var(--error);
+  border-radius: var(--radius);
+  color: var(--error);
+  margin-bottom: 1rem;
+}
+
+.notes-content {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+}
+
+.notes-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.notes-actions h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.download-pdf-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.25rem;
+  background: var(--primary);
+  border: none;
+  border-radius: var(--radius);
+  color: white;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.download-pdf-btn:hover {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow);
+}
+
+.markdown-content {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--text-primary);
+}
+
+.markdown-content h2 {
+  font-size: 1.4rem;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  color: var(--primary);
+}
+
+.markdown-content h3 {
+  font-size: 1.2rem;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+}
+
+.markdown-content h4 {
+  font-size: 1.1rem;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.markdown-content p {
+  margin-bottom: 0.75rem;
+}
+
+.markdown-content li {
+  margin-left: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Print styles for PDF download */
+@media print {
+  .studynotes-header,
+  .studynotes-setup,
+  .error-msg,
+  .download-pdf-btn,
+  .sidebar,
+  .sidebar-header,
+  .sidebar-nav,
+  .nav-group,
+  .nav-group-label,
+  .nav-link {
+    display: none !important;
+  }
+
+  .app {
+    display: block !important;
+  }
+
+  .main-wrapper {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .studynotes-container {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .notes-content {
+    max-width: 100%;
+    padding: 1rem 0;
+    border: none;
+    background: white !important;
+    box-shadow: none !important;
+  }
+
+  .notes-actions {
+    margin-bottom: 1rem;
+  }
+
+  .notes-actions h3 {
+    color: #111;
+    font-size: 1.5rem;
+  }
+
+  .markdown-content {
+    color: #111;
+  }
+
+  .markdown-content h2 {
+    color: #0d9488;
+  }
+
+  .formatted-content table,
+  .markdown-content table {
+    border-color: #333;
+  }
+
+  .formatted-content th {
+    background: #e6f7f6;
+    color: #0d9488;
+  }
+}

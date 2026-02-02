@@ -7,7 +7,6 @@ import logging
 import chromadb
 from chromadb.config import Settings
 from langchain_openai import OpenAIEmbeddings
-from langchain_community.vectorstores import Chroma
 
 from app.core.config import settings
 
@@ -31,18 +30,11 @@ class VectorStore:
             settings=Settings(anonymized_telemetry=False)
         )
         
-        # Get or create collection
+        # Get or create collection WITHOUT embedding function
+        # We'll compute embeddings ourselves to avoid signature issues
         self.collection = self.client.get_or_create_collection(
             name=settings.chroma_collection_name,
             metadata={"hnsw:space": "cosine"}
-        )
-        
-        # Initialize LangChain Chroma wrapper
-        self.vectorstore = Chroma(
-            client=self.client,
-            collection_name=settings.chroma_collection_name,
-            embedding_function=self.embeddings,
-            persist_directory=settings.chroma_persist_dir
         )
         
         logger.info(f"Initialized vector store: {settings.chroma_collection_name}")
@@ -93,9 +85,13 @@ class VectorStore:
             
             metadatas.append(metadata_clean)
         
-        # Add to ChromaDB
+        # Compute embeddings for all texts
+        embeddings_list = self.embeddings.embed_documents(texts)
+        
+        # Add to ChromaDB with pre-computed embeddings
         self.collection.add(
             ids=chunk_ids,
+            embeddings=embeddings_list,
             documents=texts,
             metadatas=metadatas
         )
@@ -132,9 +128,12 @@ class VectorStore:
             for key, value in filter_dict.items():
                 where[key] = value
         
-        # Search using ChromaDB
+        # Compute query embedding
+        query_embedding = self.embeddings.embed_query(query)
+        
+        # Search using ChromaDB with pre-computed embedding
         results = self.collection.query(
-            query_texts=[query],
+            query_embeddings=[query_embedding],
             n_results=top_k,
             where=where if where else None
         )

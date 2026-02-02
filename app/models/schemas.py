@@ -43,7 +43,7 @@ class IngestionRequest(BaseModel):
     file_url: Optional[str] = None
     content: Optional[str] = None
     source: str = Field(..., description="Source identifier (e.g., 'Neuroscience Online', 'StatPearls')")
-    file_type: Literal["pdf", "html", "text"] = Field(..., description="Document type")
+    file_type: Literal["pdf", "html", "text", "pptx"] = Field(..., description="Document type")
 
 
 class IngestionResponse(BaseModel):
@@ -175,4 +175,131 @@ class UserProgress(BaseModel):
 class ProgressResponse(BaseModel):
     """Response model for user progress."""
     progress: UserProgress
+
+
+# ============ Study Models ============
+
+class FlashCardRequest(BaseModel):
+    """Request for flash card generation."""
+    topic: Optional[str] = None
+    num_cards: int = 10
+    difficulty_level: DifficultyLevel = DifficultyLevel.UNDERGRAD
+    system_filter: Optional[SystemType] = None
+
+
+class FlashCardResponse(BaseModel):
+    """Response with flash cards."""
+    flash_cards: List[Dict[str, str]]
+    topic: str
+
+
+class FlashCardAnswerRequest(BaseModel):
+    """Request for evaluating a flash card answer."""
+    user_answer: str
+    correct_answer: str
+    question: str
+
+
+class FlashCardAnswerResponse(BaseModel):
+    """Response with flash card answer evaluation."""
+    score: float = Field(..., ge=0.0, le=1.0)
+    feedback: str
+    is_correct: bool
+    is_partial: bool
+
+
+class FlashCardSessionComplete(BaseModel):
+    """Request for analyzing completed flash card session."""
+    topic: str
+    total_score: float
+    max_score: float
+    card_results: List[Dict[str, Any]]
+
+
+class FlashCardAnalysisResponse(BaseModel):
+    """Response with session analysis and recommendations."""
+    performance_summary: str
+    strengths: List[str]
+    areas_to_improve: List[str]
+    recommended_topics: List[str]
+    next_difficulty: str
+
+
+class ClinicalCaseRequest(BaseModel):
+    """Request for clinical case generation."""
+    topic: Optional[str] = None
+    difficulty_level: DifficultyLevel = DifficultyLevel.MED
+    system_filter: Optional[SystemType] = None
+
+
+class ClinicalCaseResponse(BaseModel):
+    """Response with clinical case."""
+    case: str
+    topic: str
+    difficulty: str
+
+
+class ClinicalSessionStartRequest(BaseModel):
+    """Request to start interactive clinical session."""
+    topic: Optional[str] = None
+    difficulty_level: DifficultyLevel = DifficultyLevel.MED
+    system_filter: Optional[SystemType] = None
+
+
+class ClinicalSessionStartResponse(BaseModel):
+    """Response with initial presentation."""
+    session_id: str
+    initial_presentation: str
+    patient_name: str
+    scenario_context: str
+    stage: str  # "initial", "gathering_info", "diagnosis", "complete"
+    available_hints: int
+
+
+class ClinicalSessionInteractionRequest(BaseModel):
+    """Request for interaction in clinical session."""
+    session_id: str
+    user_message: str
+    request_hint: bool = False
+
+
+class ClinicalSessionInteractionResponse(BaseModel):
+    """Response to clinical session interaction."""
+    ai_response: str
+    revealed_information: Optional[str] = None
+    stage: str
+    requires_answer: bool
+    question_posed: Optional[str] = None
+    is_correct_path: Optional[bool] = None
+    guidance: Optional[str] = None
+    hint_given: Optional[str] = None
+    available_hints: int
+    session_complete: bool
+    completion_data: Optional[Dict[str, Any]] = None
+
+
+class ClinicalSessionCompleteResponse(BaseModel):
+    """Response when clinical session is complete."""
+    performance_summary: str
+    correct_decisions: List[str]
+    missed_points: List[str]
+    clinical_reasoning_score: float
+    final_diagnosis_correct: bool
+    learning_points: List[str]
+    recommended_topics: List[str]
+
+
+class StudyNotesRequest(BaseModel):
+    """Request for study notes generation."""
+    topic: str
+    difficulty_level: DifficultyLevel = DifficultyLevel.UNDERGRAD
+    system_filter: Optional[SystemType] = None
+    include_summary: bool = True
+
+
+class StudyNotesResponse(BaseModel):
+    """Response with study notes."""
+    notes: str
+    topic: str
+    difficulty: str
 

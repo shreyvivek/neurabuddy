@@ -52,13 +52,14 @@ CRITICAL RULES:
 4. Always cite which structures/systems you're discussing.
 5. Use precise anatomical terminology.
 6. If discussing clinical correlations, clearly state the connection between anatomy and symptoms.
+7. Format your response in clear markdown: use **bold** for key terms, bullet points (- ) for lists, and ## for major sections when appropriate.
 
 Context:
 {context}
 
 User Query: {query}
 
-Provide a clear, accurate, and educational response based ONLY on the context above."""),
+Provide a clear, accurate, and educational response based ONLY on the context above. Use markdown for readability."""),
             ("human", "{query}")
         ])
         
@@ -91,6 +92,7 @@ Provide a clear, accurate, and educational response based ONLY on the context ab
             filter_dict["difficulty_level"] = difficulty_level.value
         
         # Step 3: Retrieve relevant chunks
+        # First try with normal threshold
         retrieved_chunks = self.vector_store.search(
             query=query,
             top_k=settings.retrieval_top_k,
@@ -98,14 +100,41 @@ Provide a clear, accurate, and educational response based ONLY on the context ab
             min_score=settings.min_retrieval_score
         )
         
-        # Step 4: Check retrieval confidence
+        # If no results, try with lower threshold (in case knowledge base is sparse)
         if not retrieved_chunks:
-            return {
-                "answer": "I don't have enough information in my knowledge base to answer this question accurately. Please try rephrasing or asking about a different topic.",
-                "sources": [],
-                "confidence": 0.0,
-                "intent": intent
-            }
+            retrieved_chunks = self.vector_store.search(
+                query=query,
+                top_k=settings.retrieval_top_k,
+                filter_dict=filter_dict if filter_dict else None,
+                min_score=0.3  # Lower threshold for sparse knowledge bases
+            )
+        
+        # Step 4: Check retrieval confidence - try fallback strategies
+        if not retrieved_chunks:
+            stats = self.vector_store.get_collection_stats()
+            if stats["total_chunks"] == 0:
+                # Knowledge base empty - use general knowledge for educational queries
+                return self._fallback_general_knowledge(query, intent)
+            else:
+                # Try broader retrieval for summarize/explain type queries
+                query_lower = query.lower()
+                broad_queries = [
+                    "key points", "main points", "summary", "overview",
+                    "neuroanatomy", "anatomy", "key concepts"
+                ]
+                if any(w in query_lower for w in ["summarize", "summary", "key points", "main points"]):
+                    broad_queries = ["key points", "main points", "summary"] + broad_queries
+                for bq in broad_queries:
+                    retrieved_chunks = self.vector_store.search(
+                        query=bq,
+                        top_k=settings.retrieval_top_k * 2,
+                        filter_dict=None,
+                        min_score=0.2
+                    )
+                    if retrieved_chunks:
+                        break
+                if not retrieved_chunks:
+                    return self._fallback_general_knowledge(query, intent, stats["total_chunks"])
         
         # Calculate average confidence
         avg_confidence = sum(chunk["score"] for chunk in retrieved_chunks) / len(retrieved_chunks)
@@ -118,7 +147,7 @@ Provide a clear, accurate, and educational response based ONLY on the context ab
             query=query
         )
         
-        # Format sources
+        # Format sources - include content for frontend display
         sources = [
             {
                 "chunk_id": chunk["chunk_id"],
@@ -126,7 +155,8 @@ Provide a clear, accurate, and educational response based ONLY on the context ab
                 "system": chunk["metadata"].get("system", "other"),
                 "source": chunk["metadata"].get("source", "Unknown"),
                 "score": chunk["score"],
-                "preview": chunk["metadata"].get("chunk_text_preview", "")[:150]
+                "preview": chunk["metadata"].get("chunk_text_preview", chunk["content"][:300]) or chunk["content"][:300],
+                "content": chunk["content"][:500]
             }
             for chunk in retrieved_chunks
         ]
@@ -147,6 +177,38 @@ Provide a clear, accurate, and educational response based ONLY on the context ab
             logger.error(f"Error classifying intent: {str(e)}")
             return "factual_explanation"  # Default fallback
     
+    def _fallback_general_knowledge(
+        self,
+        query: str,
+        intent: str,
+        total_chunks: int = 0
+    ) -> Dict[str, Any]:
+        """Use LLM general knowledge when KB is empty or retrieval fails for summarize/explain queries."""
+        fallback_prompt = ChatPromptTemplate.from_messages([
+            ("system", """You are NeuraBuddy, an expert neuroanatomy teaching assistant.
+The user asked: {query}
+
+{context}
+
+Provide a helpful, accurate, educational response. Use your knowledge of neuroanatomy.
+If the knowledge base is empty, encourage them to upload documents and provide a brief, accurate overview of common neuroanatomy topics that relate to their question.
+Be concise but informative. Use proper anatomical terminology.
+Format with markdown: **bold** for key terms, bullet points (- ) for lists."""),
+            ("human", "{query}")
+        ])
+        fallback_chain = LLMChain(llm=self.llm, prompt=fallback_prompt)
+        if total_chunks == 0:
+            context = "The user has not uploaded any documents yet."
+        else:
+            context = f"Retrieval found no direct matches, but the knowledge base has {total_chunks} chunks."
+        answer = fallback_chain.run(query=query, context=context)
+        return {
+            "answer": answer,
+            "sources": [],
+            "confidence": 0.5,
+            "intent": QueryIntent(intent.strip().lower()) if intent else QueryIntent.FACTUAL
+        }
+
     def _format_context(self, chunks: List[Dict[str, Any]]) -> str:
         """Format retrieved chunks into context string."""
         context_parts = []

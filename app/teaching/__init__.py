@@ -1,2 +1,0 @@
-# Pedagogical teaching logic
-
