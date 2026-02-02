@@ -23,6 +23,8 @@ data/processed/
 *.pdf
 *.html
 *.txt
+!requirements.txt
+!runtime.txt
 
 # IDE
 .vscode/
