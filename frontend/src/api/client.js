@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const API_BASE_URL = '/api/v1'
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1'
 
 const client = axios.create({
   baseURL: API_BASE_URL,
@@ -29,9 +29,9 @@ client.interceptors.response.use(
 )
 
 export const api = {
-  // Query
+  // Query (60s timeout - LLM + RAG can be slow, especially on cold start)
   query: async (data) => {
-    const response = await client.post('/query', data)
+    const response = await client.post('/query', data, { timeout: 60000 })
     return response.data
   },
 
@@ -50,9 +50,9 @@ export const api = {
     return response.data
   },
 
-  // Teaching
+  // Teaching (60s timeout for LLM)
   teach: async (data) => {
-    const response = await client.post('/teach', data)
+    const response = await client.post('/teach', data, { timeout: 60000 })
     return response.data
   },
 
