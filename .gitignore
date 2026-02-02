@@ -23,6 +23,7 @@ data/processed/
 *.pdf
 *.html
 *.txt
+!frontend/index.html
 !requirements.txt
 !runtime.txt
 
