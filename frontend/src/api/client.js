@@ -56,14 +56,14 @@ export const api = {
     return response.data
   },
 
-  // Quiz
+  // Quiz (90s timeout - generates multiple LLM questions)
   startQuiz: async (data) => {
-    const response = await client.post('/quiz/start', data)
+    const response = await client.post('/quiz/start', data, { timeout: 90000 })
     return response.data
   },
 
   submitAnswer: async (data) => {
-    const response = await client.post('/quiz/answer', data)
+    const response = await client.post('/quiz/answer', data, { timeout: 30000 })
     return response.data
   },
 

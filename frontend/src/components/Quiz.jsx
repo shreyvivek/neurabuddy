@@ -62,7 +62,11 @@ function Quiz() {
       setAnswers({})
       setFeedback(null)
     } catch (error) {
-      alert(error.response?.data?.detail || 'Failed to start quiz')
+      const detail = error.response?.data?.detail
+      const msg = Array.isArray(detail)
+        ? detail.map(d => d.msg || JSON.stringify(d)).join('; ')
+        : (typeof detail === 'string' ? detail : detail?.msg) || error.message || 'Failed to start quiz'
+      alert(msg)
     } finally {
       setStarting(false)
     }
@@ -215,7 +219,7 @@ function Quiz() {
                 {starting ? (
                   <>
                     <Loader2 className="spinner" />
-                    Generating Quiz...
+                    Generating quiz… (may take 1–2 min)
                   </>
                 ) : (
                   <>
